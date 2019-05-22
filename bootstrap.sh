@@ -6,6 +6,7 @@ cat >>/etc/hosts<<EOF
 172.42.42.100 kmaster.example.com kmaster
 172.42.42.101 kworker1.example.com kworker1
 172.42.42.102 kworker2.example.com kworker2
+52.84.64.16 download.docker.com
 EOF
 
 # Install docker from Docker-ce repository
