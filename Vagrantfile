@@ -5,8 +5,6 @@ ENV['VAGRANT_NO_PARALLEL'] = 'yes'
 
 Vagrant.configure(2) do |config|
 
-  config.vm.provision "shell", path: "bootstrap.sh"
-
   # Kubernetes Master Server
   config.vm.define "kmaster" do |kmaster|
     kmaster.vm.box = "centos/7"
@@ -17,6 +15,7 @@ Vagrant.configure(2) do |config|
       v.memory = 2048
       v.cpus = 2
     end
+    kmaster.vm.provision "shell", path: "bootstrap_kubernetes.sh"
     kmaster.vm.provision "shell", path: "bootstrap_kmaster.sh"
   end
 
@@ -33,8 +32,24 @@ Vagrant.configure(2) do |config|
         v.memory = 1024
         v.cpus = 1
       end
+      workernode.vm.provision "shell", path: "bootstrap_kubernetes.sh"
       workernode.vm.provision "shell", path: "bootstrap_kworker.sh"
     end
   end
 
+  # HA Proxy Server
+  config.vm.define "kbalancer" do |kbalancer|
+    kbalancer.vm.box = "centos/7"
+    kbalancer.vm.hostname = "kbalancer.example.com"
+    kbalancer.vm.network "private_network", ip: "172.42.42.99"
+    kbalancer.vm.provider "virtualbox" do |v|
+      v.name = "kbalancer"
+      v.memory = 1024
+      v.cpus = 1
+    end
+    kbalancer.vm.provision "shell", path: "bootstrap_haproxy.sh"
+    kbalancer.vm.provision "file", source: "haproxy.cfg", destination: "/tmp/haproxy.cfg"
+    kbalancer.vm.provision "shell",
+      inline: "cp /tmp/haproxy.cfg /etc/haproxy/haproxy.cfg; rm /tmp/haproxy.cfg; systemctl restart haproxy; systemctl enable haproxy"
+  end
 end
